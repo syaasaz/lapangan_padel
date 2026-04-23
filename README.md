@@ -22,3 +22,25 @@ Proses reservasi lapangan olahraga di beberapa tempat masih dilakukan secara man
 
 ## 🎯 Tujuan
 Tujuan dari sistem ini adalah untuk mempermudah proses reservasi lapangan secara online, menyediakan informasi jadwal secara real-time, serta membantu pengelola dalam mengelola data pemesanan secara efektif dan terstruktur.
+
+
+---
+
+## 🚀 Fitur Utama
+- Autentikasi Login & Logout 
+- Reservasi Lapangan Online
+- Cek Ketersediaan Jadwal Secara Real-time
+- Manajemen Data Lapangan (CRUD)
+- Kelola Data Reservasi
+- Pembatalan & Status Reservasi (pending, berhasil, batal)
+- Filter Jadwal Berdasarkan Tanggal & Jam
+- Dashboard Monitoring Reservasi
+
+---
+
+## 🛠️ Teknologi yang Digunakan
+- Laravel
+- PHP
+- MySQL
+- Tailwind CSS
+- Visual Studio Code
