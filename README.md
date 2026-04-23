@@ -44,3 +44,9 @@ Tujuan dari sistem ini adalah untuk mempermudah proses reservasi lapangan secara
 - MySQL
 - Tailwind CSS
 - Visual Studio Code
+
+
+---
+
+## 📌 Kesimpulan
+Sistem Informasi Reservasi Lapangan ini dibangun untuk memberikan solusi terhadap permasalahan dalam proses pemesanan lapangan yang masih dilakukan secara manual. Dengan adanya sistem ini, proses reservasi menjadi lebih mudah, cepat, dan terstruktur, serta dapat meminimalisir kesalahan pencatatan dan bentrok jadwal, sehingga meningkatkan efisiensi bagi pengguna maupun pengelola.
