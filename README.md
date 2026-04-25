@@ -49,7 +49,7 @@ Tujuan dari sistem ini adalah untuk mempermudah proses reservasi lapangan secara
 ---
 
 
-## 🟨 Latar Belakang
+## 🟨 Akun
 email : admin@padel.com
 password : 12345678
 
