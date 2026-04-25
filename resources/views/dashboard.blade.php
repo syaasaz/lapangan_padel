@@ -4,12 +4,11 @@
     <section class="page-header mb-4">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-                <h1 class="page-title">{{ $isAdmin ? 'Dashboard Admin' : 'Dashboard' }}</h1>
-                <p class="page-subtitle mb-0">
-                    {{ $isAdmin ? 'Ringkasan data reservasi yang masuk ke sistem.' : 'Ringkasan reservasi yang terkait dengan akun Anda.' }}
-                </p>
+                <h1 class="page-title">Dashboard Admin</h1>
+                <p class="page-subtitle mb-0">Ringkasan data reservasi dan pengelolaan lapangan untuk admin.</p>
             </div>
             <div class="page-actions">
+                <a href="{{ route('lapangans.index') }}" class="btn btn-light">Kelola Lapangan</a>
                 <a href="{{ route('reservations.index') }}" class="btn btn-light">Lihat Reservasi</a>
                 <a href="{{ route('reservations.create') }}" class="btn btn-primary">Tambah Reservasi</a>
             </div>
@@ -19,7 +18,7 @@
     <section class="row g-4 mb-4">
         <div class="col-md-4">
             <div class="stats-card">
-                <div class="section-label">{{ $isAdmin ? 'Total Reservasi' : 'Reservasi Saya' }}</div>
+                <div class="section-label">Total Reservasi</div>
                 <div class="stats-value">{{ $totalReservations }}</div>
                 <div class="text-muted-soft mt-2">Total data reservasi yang tersedia saat ini.</div>
             </div>
@@ -44,7 +43,7 @@
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
             <div>
                 <div class="section-label">Data Terbaru</div>
-                <h2 class="h4 mb-0">{{ $isAdmin ? 'Reservasi Terbaru' : 'Reservasi Terbaru Saya' }}</h2>
+                <h2 class="h4 mb-0">Reservasi Terbaru</h2>
             </div>
             <a href="{{ route('reservations.index') }}" class="btn btn-light">Lihat Semua</a>
         </div>
@@ -54,9 +53,7 @@
                 <thead>
                     <tr>
                         <th>No</th>
-                        @if ($isAdmin)
-                            <th>User</th>
-                        @endif
+                        <th>User</th>
                         <th>Nama Pemesan</th>
                         <th>Tanggal</th>
                         <th>Lapangan</th>
@@ -76,9 +73,7 @@
                         @endphp
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            @if ($isAdmin)
-                                <td>{{ $reservation->user->name ?? '-' }}</td>
-                            @endif
+                            <td>{{ $reservation->user->name ?? '-' }}</td>
                             <td>{{ $reservation->nama_pemesan }}</td>
                             <td>{{ $reservation->tanggal_reservasi->format('d M Y') }}</td>
                             <td>{{ $reservation->nama_lapangan }}</td>
@@ -86,7 +81,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $isAdmin ? 6 : 5 }}" class="text-center text-muted-soft py-4">Belum ada data reservasi.</td>
+                            <td colspan="6" class="text-center text-muted-soft py-4">Belum ada data reservasi.</td>
                         </tr>
                     @endforelse
                 </tbody>

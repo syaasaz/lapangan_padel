@@ -1,21 +1,15 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        $isAdmin = auth()->user()->isAdmin();
-    @endphp
-
     <section class="page-header mb-4">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
                 <h1 class="page-title">Daftar Reservasi</h1>
-                <p class="page-subtitle mb-0">
-                    {{ $isAdmin ? 'Admin meninjau dan mengonfirmasi pesanan yang masuk.' : 'Pantau status pesanan lapangan yang sudah Anda buat.' }}
-                </p>
+                <p class="page-subtitle mb-0">Admin dapat menambah, mengubah, mengonfirmasi, atau membatalkan reservasi dari halaman ini.</p>
             </div>
             <div class="page-actions">
                 <a href="{{ route('dashboard') }}" class="btn btn-light">Dashboard</a>
-                <a href="{{ route('reservations.create') }}" class="btn btn-primary">{{ $isAdmin ? 'Tambah Reservasi' : 'Pesan Lapangan' }}</a>
+                <a href="{{ route('reservations.create') }}" class="btn btn-primary">Tambah Reservasi</a>
             </div>
         </div>
     </section>
@@ -26,9 +20,7 @@
                 <thead>
                     <tr>
                         <th>No</th>
-                        @if ($isAdmin)
-                            <th>User</th>
-                        @endif
+                        <th>User</th>
                         <th>Nama Pemesan</th>
                         <th>Tanggal</th>
                         <th>Waktu</th>
@@ -52,9 +44,7 @@
                         @endphp
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            @if ($isAdmin)
-                                <td>{{ $reservation->user->name ?? '-' }}</td>
-                            @endif
+                            <td>{{ $reservation->user->name ?? '-' }}</td>
                             <td>
                                 <div class="fw-semibold">{{ $reservation->nama_pemesan }}</div>
                                 <small class="text-muted">{{ $reservation->no_hp }}</small>
@@ -68,97 +58,34 @@
                             <td class="text-end">
                                 <div class="d-flex justify-content-end flex-wrap gap-2">
                                     <a href="{{ route('reservations.show', $reservation) }}" class="btn btn-light btn-sm">Detail</a>
-
-                                    @if ($isAdmin)
-                                        <a href="{{ route('reservations.edit', $reservation) }}" class="btn btn-primary btn-sm">Kelola</a>
-                                        @if ($reservation->status === 'Pending')
-                                            <form action="{{ route('reservations.confirm', $reservation) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="btn btn-success btn-sm">Konfirmasi</button>
-                                            </form>
-                                            <form action="{{ route('reservations.reject', $reservation) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="btn btn-outline-danger btn-sm">Tolak</button>
-                                            </form>
-                                        @endif
-                                    @elseif ($reservation->status === 'Pending')
-                                        <a href="{{ route('reservations.edit', $reservation) }}" class="btn btn-primary btn-sm">Edit</a>
-                                        <button
-                                            type="button"
-                                            class="btn btn-outline-danger btn-sm"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#cancelReservationModal"
-                                            data-cancel-url="{{ route('reservations.destroy', $reservation) }}"
-                                            data-reservation-name="{{ $reservation->nama_pemesan }}"
-                                        >
-                                            Batalkan
-                                        </button>
+                                    <a href="{{ route('reservations.edit', $reservation) }}" class="btn btn-primary btn-sm">Edit</a>
+                                    @if ($reservation->status === 'Pending')
+                                        <form action="{{ route('reservations.confirm', $reservation) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="btn btn-success btn-sm">Konfirmasi</button>
+                                        </form>
+                                        <form action="{{ route('reservations.reject', $reservation) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">Tolak</button>
+                                        </form>
                                     @endif
+                                    <form action="{{ route('reservations.destroy', $reservation) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Hapus reservasi ini?')">Hapus</button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $isAdmin ? 10 : 9 }}" class="text-center text-muted-soft py-4">Belum ada reservasi.</td>
+                            <td colspan="10" class="text-center text-muted-soft py-4">Belum ada reservasi.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
     </section>
-
-    @unless ($isAdmin)
-        <div class="modal fade" id="cancelReservationModal" tabindex="-1" aria-labelledby="cancelReservationModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-0 shadow-sm">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="cancelReservationModalLabel">Batalkan Pesanan</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="mb-2">Apakah Anda ingin membatalkan pesanan ini?</p>
-                        <p class="text-muted mb-0" id="cancelReservationText"></p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tidak</button>
-                        <form method="POST" id="cancelReservationForm" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger">Ya, Batalkan</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endunless
 @endsection
-
-@unless ($isAdmin)
-    @push('scripts')
-        <script>
-            (() => {
-                const cancelModal = document.getElementById('cancelReservationModal');
-
-                if (!cancelModal) {
-                    return;
-                }
-
-                const cancelForm = document.getElementById('cancelReservationForm');
-                const cancelText = document.getElementById('cancelReservationText');
-
-                cancelModal.addEventListener('show.bs.modal', (event) => {
-                    const trigger = event.relatedTarget;
-
-                    if (!trigger) {
-                        return;
-                    }
-
-                    cancelForm.action = trigger.getAttribute('data-cancel-url') || '';
-                    cancelText.textContent = 'Pesanan atas nama ' + (trigger.getAttribute('data-reservation-name') || '-') + ' akan dihapus dari daftar Anda.';
-                });
-            })();
-        </script>
-    @endpush
-@endunless

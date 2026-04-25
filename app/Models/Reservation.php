@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Reservation extends Model
 {
     protected $fillable = [
+        'lapangan_id',
         'nama_pemesan',
         'no_hp',
         'tanggal_reservasi',
@@ -37,5 +38,10 @@ class Reservation extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function lapangan(): BelongsTo
+    {
+        return $this->belongsTo(Lapangan::class);
     }
 }

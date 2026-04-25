@@ -1,9 +1,9 @@
 @php
     $isEdit = isset($reservation);
     $isAdmin = auth()->user()->isAdmin();
-    $pricePerHour = 450000;
     $selectedDuration = old('durasi', isset($reservation) ? rtrim(rtrim(number_format((float) $reservation->durasi, 2, '.', ''), '0'), '.') : '');
     $selectedPrice = old('harga', isset($reservation) ? (string) (float) $reservation->harga : '');
+    $selectedLapanganId = old('lapangan_id', $reservation->lapangan_id ?? '');
 @endphp
 
 <div class="row g-4">
@@ -48,9 +48,20 @@
     </div>
 
     <div class="col-md-6">
-        <label for="nama_lapangan" class="form-label">Nama Lapangan</label>
-        <input type="text" class="form-control @error('nama_lapangan') is-invalid @enderror" id="nama_lapangan" name="nama_lapangan" value="{{ old('nama_lapangan', $reservation->nama_lapangan ?? '') }}" required>
-        @error('nama_lapangan')
+        <label for="lapangan_id" class="form-label">Pilih Lapangan</label>
+        <select class="form-select @error('lapangan_id') is-invalid @enderror" id="lapangan_id" name="lapangan_id" required>
+            <option value="">Pilih lapangan</option>
+            @foreach ($lapangans as $lapangan)
+                <option
+                    value="{{ $lapangan->id }}"
+                    data-price="{{ (float) $lapangan->harga_per_jam }}"
+                    @selected((string) $selectedLapanganId === (string) $lapangan->id)
+                >
+                    {{ $lapangan->nama_lapangan }} - {{ $lapangan->jenis_lapangan }} ({{ \App\Models\Lapangan::STATUS_OPTIONS[$lapangan->status] }})
+                </option>
+            @endforeach
+        </select>
+        @error('lapangan_id')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
     </div>
@@ -72,7 +83,7 @@
         @error('harga')
             <div class="invalid-feedback d-block">{{ $message }}</div>
         @enderror
-        <small class="text-muted">Tarif lapangan Rp {{ number_format($pricePerHour, 0, ',', '.') }} per jam.</small>
+        <small class="text-muted">Harga mengikuti tarif lapangan yang dipilih.</small>
     </div>
 
     <div class="col-md-6">
@@ -99,13 +110,13 @@
         (() => {
             const jamMulai = document.getElementById('jam_mulai');
             const jamSelesai = document.getElementById('jam_selesai');
+            const lapanganSelect = document.getElementById('lapangan_id');
             const durasiInput = document.getElementById('durasi');
             const durasiTampil = document.getElementById('durasi_tampil');
             const hargaInput = document.getElementById('harga');
             const hargaTampil = document.getElementById('harga_tampil');
-            const pricePerHour = 450000;
 
-            if (!jamMulai || !jamSelesai || !durasiInput || !durasiTampil || !hargaInput || !hargaTampil) {
+            if (!jamMulai || !jamSelesai || !lapanganSelect || !durasiInput || !durasiTampil || !hargaInput || !hargaTampil) {
                 return;
             }
 
@@ -136,6 +147,14 @@
                     return;
                 }
 
+                const selectedOption = lapanganSelect.options[lapanganSelect.selectedIndex];
+                const pricePerHour = Number(selectedOption?.getAttribute('data-price'));
+
+                if (!selectedOption || !pricePerHour) {
+                    resetCalculatedFields();
+                    return;
+                }
+
                 const [startHour, startMinute] = jamMulai.value.split(':').map(Number);
                 const [endHour, endMinute] = jamSelesai.value.split(':').map(Number);
                 const start = (startHour * 60) + startMinute;
@@ -157,6 +176,7 @@
 
             jamMulai.addEventListener('input', updateCalculatedFields);
             jamSelesai.addEventListener('input', updateCalculatedFields);
+            lapanganSelect.addEventListener('change', updateCalculatedFields);
             updateCalculatedFields();
         })();
     </script>

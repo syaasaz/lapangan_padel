@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Lapangan;
 use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,34 +29,24 @@ class ExampleTest extends TestCase
         $response->assertSee('Masuk');
     }
 
-    public function test_register_page_is_accessible(): void
+    public function test_admin_can_login_with_session(): void
     {
-        $response = $this->get(route('register'));
+        $password = 'secret123';
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'password' => $password,
+        ]);
 
-        $response->assertOk();
-        $response->assertSee('Register');
-        $response->assertSee('Daftar');
-    }
-
-    public function test_register_creates_user_with_session_login_and_user_role(): void
-    {
-        $response = $this->post(route('register.store'), [
-            'name' => 'User Baru',
-            'email' => 'baru@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+        $response = $this->post(route('login.submit'), [
+            'email' => $admin->email,
+            'password' => $password,
         ]);
 
         $response->assertRedirect(route('dashboard'));
-        $this->assertAuthenticated();
-        $this->assertDatabaseHas('users', [
-            'name' => 'User Baru',
-            'email' => 'baru@example.com',
-            'role' => 'user',
-        ]);
+        $this->assertAuthenticatedAs($admin);
     }
 
-    public function test_session_login_allows_user_to_access_dashboard(): void
+    public function test_non_admin_cannot_login(): void
     {
         $password = 'secret123';
         $user = User::factory()->create([
@@ -63,101 +54,99 @@ class ExampleTest extends TestCase
             'password' => $password,
         ]);
 
-        $response = $this->post(route('login.submit'), [
+        $response = $this->from(route('login'))->post(route('login.submit'), [
             'email' => $user->email,
             'password' => $password,
         ]);
 
-        $response->assertRedirect(route('dashboard'));
-        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest();
     }
 
     public function test_password_is_stored_in_hashed_format(): void
     {
-        $user = User::factory()->create([
+        $admin = User::factory()->create([
+            'role' => 'admin',
             'password' => 'plain-password',
         ]);
 
-        $this->assertNotSame('plain-password', $user->getRawOriginal('password'));
-        $this->assertTrue(Hash::check('plain-password', $user->getRawOriginal('password')));
+        $this->assertNotSame('plain-password', $admin->getRawOriginal('password'));
+        $this->assertTrue(Hash::check('plain-password', $admin->getRawOriginal('password')));
     }
 
-    public function test_guest_cannot_access_reservation_crud_pages(): void
+    public function test_guest_cannot_access_admin_features(): void
     {
-        $response = $this->get(route('reservations.index'));
-
-        $response->assertRedirect(route('login'));
+        $this->get(route('reservations.index'))->assertRedirect(route('login'));
+        $this->get(route('lapangans.index'))->assertRedirect(route('login'));
     }
 
-    public function test_user_created_reservation_is_always_pending(): void
+    public function test_non_admin_cannot_access_admin_features_even_if_authenticated(): void
     {
         $user = User::factory()->create(['role' => 'user']);
 
-        $response = $this->actingAs($user)->post(route('reservations.store'), [
+        $this->actingAs($user)->get(route('dashboard'))->assertForbidden();
+        $this->actingAs($user)->get(route('reservations.index'))->assertForbidden();
+        $this->actingAs($user)->get(route('lapangans.index'))->assertForbidden();
+    }
+
+    public function test_admin_can_create_lapangan(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $response = $this->actingAs($admin)->post(route('lapangans.store'), [
+            'nama_lapangan' => 'Lapangan A',
+            'jenis_lapangan' => 'Futsal',
+            'harga_per_jam' => 450000,
+            'status' => 'tersedia',
+        ]);
+
+        $response->assertRedirect(route('lapangans.index'));
+        $this->assertDatabaseHas('lapangans', [
+            'nama_lapangan' => 'Lapangan A',
+            'jenis_lapangan' => 'Futsal',
+            'status' => 'tersedia',
+        ]);
+    }
+
+    public function test_admin_can_create_and_confirm_reservation_using_selected_lapangan(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $lapangan = Lapangan::create([
+            'nama_lapangan' => 'Lapangan A',
+            'jenis_lapangan' => 'Futsal',
+            'harga_per_jam' => 450000,
+            'status' => 'tersedia',
+        ]);
+
+        $createResponse = $this->actingAs($admin)->post(route('reservations.store'), [
+            'lapangan_id' => $lapangan->id,
             'nama_pemesan' => 'Budi',
             'no_hp' => '081234567890',
             'tanggal_reservasi' => now()->addDay()->format('Y-m-d'),
             'jam_mulai' => '10:00',
             'jam_selesai' => '12:00',
-            'nama_lapangan' => 'Lapangan A',
             'durasi' => 2,
             'harga' => 200000,
-            'status' => 'Dikonfirmasi',
         ]);
 
-        $response->assertRedirect(route('reservations.index'));
+        $createResponse->assertRedirect(route('reservations.index'));
+
+        $reservation = Reservation::firstOrFail();
+
         $this->assertDatabaseHas('reservations', [
-            'nama_pemesan' => 'Budi',
-            'user_id' => $user->id,
-            'status' => 'Pending',
-        ]);
-    }
-
-    public function test_admin_can_confirm_user_reservation(): void
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-        $user = User::factory()->create(['role' => 'user']);
-        $reservation = Reservation::create([
-            'user_id' => $user->id,
-            'nama_pemesan' => 'Budi',
-            'no_hp' => '081234567890',
-            'tanggal_reservasi' => now()->addDay()->toDateString(),
-            'jam_mulai' => '10:00',
-            'jam_selesai' => '12:00',
+            'id' => $reservation->id,
+            'lapangan_id' => $lapangan->id,
             'nama_lapangan' => 'Lapangan A',
-            'durasi' => 2,
-            'harga' => 900000,
             'status' => 'Pending',
         ]);
 
-        $response = $this->actingAs($admin)->patch(route('reservations.confirm', $reservation));
+        $confirmResponse = $this->actingAs($admin)->patch(route('reservations.confirm', $reservation));
 
-        $response->assertRedirect(route('reservations.index'));
+        $confirmResponse->assertRedirect(route('reservations.index'));
         $this->assertDatabaseHas('reservations', [
             'id' => $reservation->id,
             'status' => 'Dikonfirmasi',
         ]);
-    }
-
-    public function test_regular_user_cannot_open_other_users_reservation(): void
-    {
-        $owner = User::factory()->create(['role' => 'user']);
-        $otherUser = User::factory()->create(['role' => 'user']);
-        $reservation = Reservation::create([
-            'user_id' => $owner->id,
-            'nama_pemesan' => 'Budi',
-            'no_hp' => '081234567890',
-            'tanggal_reservasi' => now()->addDay()->toDateString(),
-            'jam_mulai' => '10:00',
-            'jam_selesai' => '12:00',
-            'nama_lapangan' => 'Lapangan A',
-            'durasi' => 2,
-            'harga' => 900000,
-            'status' => 'Pending',
-        ]);
-
-        $response = $this->actingAs($otherUser)->get(route('reservations.show', $reservation));
-
-        $response->assertForbidden();
     }
 }

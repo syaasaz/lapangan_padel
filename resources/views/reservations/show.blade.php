@@ -2,7 +2,6 @@
 
 @section('content')
     @php
-        $isAdmin = auth()->user()->isAdmin();
         $statusClass = match ($reservation->status) {
             'Pending' => 'status-pending',
             'Dikonfirmasi' => 'status-confirmed',
@@ -16,16 +15,12 @@
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
                 <h1 class="page-title">Detail Reservasi</h1>
-                <p class="page-subtitle mb-0">
-                    {{ $isAdmin ? 'Admin dapat memeriksa dan memproses pesanan dari halaman ini.' : 'Lihat detail pesanan dan tunggu konfirmasi dari admin.' }}
-                </p>
+                <p class="page-subtitle mb-0">Admin dapat memeriksa detail reservasi, mengubah data, dan memproses status dari halaman ini.</p>
             </div>
             <div class="page-actions">
                 <a href="{{ route('reservations.index') }}" class="btn btn-light">Kembali</a>
-                @if ($isAdmin || $reservation->status === 'Pending')
-                    <a href="{{ route('reservations.edit', $reservation) }}" class="btn btn-primary">{{ $isAdmin ? 'Kelola' : 'Edit' }}</a>
-                @endif
-                @if ($isAdmin && $reservation->status === 'Pending')
+                <a href="{{ route('reservations.edit', $reservation) }}" class="btn btn-primary">Kelola</a>
+                @if ($reservation->status === 'Pending')
                     <form action="{{ route('reservations.confirm', $reservation) }}" method="POST" class="d-inline">
                         @csrf
                         @method('PATCH')
@@ -65,6 +60,10 @@
             <div class="detail-item">
                 <div class="detail-label">Nama Lapangan</div>
                 <div class="detail-value">{{ $reservation->nama_lapangan }}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Jenis Lapangan</div>
+                <div class="detail-value">{{ $reservation->lapangan->jenis_lapangan ?? '-' }}</div>
             </div>
             <div class="detail-item">
                 <div class="detail-label">Durasi</div>

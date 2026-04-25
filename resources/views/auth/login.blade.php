@@ -37,11 +37,6 @@
 
                     <button type="submit" class="btn btn-primary w-100">Masuk</button>
                 </form>
-
-                <div class="mt-4 text-center small">
-                    Belum punya akun?
-                    <a href="{{ route('register') }}" class="text-decoration-none">Daftar di sini</a>
-                </div>
             </section>
         </div>
     </div>
